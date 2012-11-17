@@ -1,0 +1,14 @@
+{
+    "name": "wp-send-email",
+    "version": "0.0.1",
+    "engines": {
+        "node": "0.6.12",
+        "npm": "1.1.9"
+    },
+    "dependencies": {
+        "express": "3.0.3",
+        "underscore": "1.4.2",
+        "nodemailer": "0.3.31",
+        "yaml": "0.2.3"
+    }
+}
