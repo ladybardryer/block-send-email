@@ -81,23 +81,29 @@ app.options('/', function (request, response) {
 
 app.post('/', function (request, response) {
 
+	if (!_.has(request.body, 'input') && _.isObject(request.body.input)) {
+		exit('WebPipe "input" is missing or formatted incorrectly.');
+	}
+	
+	var input = request.body.input;
+	
 	// Verify POST keys exist
-	if (!_.has(request.body, 'to')) {
+	if (!_.has(input, 'to')) {
 		exit('Email "to" address is missing.');
 	}
-	if (!_.has(request.body, 'subject')) {
+	if (!_.has(input, 'subject')) {
 		exit('Email "subject" is missing.');
 	}
-	if (!_.has(request.body, 'body')) {
+	if (!_.has(input, 'body')) {
 		exit('Email "body" is missing.');
 	}
 
 	// Send mail
 	var mailOptions = {
 		from: config.from,
-		to: request.body.to,
-		subject: request.body.subject,
-		text: request.body.body,
+		to: input.to,
+		subject: input.subject,
+		text: input.body,
 	};
 
 	mailTransport.sendMail(mailOptions, function (error, res) {
