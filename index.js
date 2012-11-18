@@ -1,5 +1,5 @@
 var fs = require('fs'),
-	yaml = require('yaml')
+	yaml = require('yaml'),
 	_ = require('underscore'),
 	nodemailer = require('nodemailer'),
 	express = require('express'),
