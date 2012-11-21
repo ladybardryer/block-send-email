@@ -56,7 +56,7 @@ app.options('/', function (request, response) {
 
 	// CORS support
 	response.set('Access-Control-Allow-Origin', '*');
-	response.set('Access-Control-Allow-Methods', 'POST');
+	response.set('Access-Control-Allow-Methods', 'OPTIONS,POST');
 	response.set('Access-Control-Allow-Headers', 'Content-Type');
 
 	// The block definition
