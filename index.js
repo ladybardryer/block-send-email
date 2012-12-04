@@ -1,122 +1,33 @@
-var fs = require('fs'),
-	yaml = require('yaml'),
-	_ = require('underscore'),
-	nodemailer = require('nodemailer'),
-	express = require('express'),
-	app = express();
-
-app.use(express.bodyParser());
-
-// Simple logger
-app.use(function (request, response, next) {
-	console.log('%s %s', request.method, request.url);
-	next();
-});
-
-// Handle uncaughtException
-process.on('uncaughtException', function (error) {
-	exit('Error: ' + error.message);
-});
-
-var exit = function (message) {
-	if (message) {
-		console.log(message);
-	}
-	console.log('Exiting...');
-	process.exit(1);
-};
-
-// Open the config file and establish user settings.
-var config = yaml.eval(fs.readFileSync('config.yaml', 'utf8').toString());
-
-// Validate the config file and ensure mandatory fields exist
-if (!_.has(config, 'from') || !_.isString(config.from)) {
-	exit('Invalid config. From must be an email address.');
-}
-
-if (!_.has(config, 'ses') || !_.isObject(config.ses)) {
-	exit('Invalid config. AWS SES settings are missing.');
-}
-
-if (!_.has(config.ses, 'access') || !_.isString(config.ses.access)) {
-	exit('Invalid config. AWS SES Access Key is missing.');
-}
-
-if (!_.has(config.ses, 'secret') || !_.isString(config.ses.access)) {
-	exit('Invalid config. AWS SES Secret Key is missing.');
-}
+var webpipes = require('node-webpipe');
+var nodemailer = require('nodemailer');
 
 // Configure the Mail
-var mailTransport = nodemailer.createTransport('SES', {
-	AWSAccessKeyID: config.ses.access,
-	AWSSecretKey: config.ses.secret
+var mail = nodemailer.createTransport('SES', {
+    AWSAccessKeyID: process.env['SES_ACCESS_KEY_ID'],
+    AWSSecretKey: process.env['SES_SECRET_ACCESS_KEY']
 });
 
-app.options('/', function (request, response) {
+var block = new webpipes.Block()
+    .name("Send Email")
+    .description("WebPipe block for sending emails.")
+    .input("to", "string", "The email address of the message's recipient.")
+    .input("subject", "string", "A brief summary of the topic of the message.")
+    .input("body", "string", "The main content of the message.")
 
-	// CORS support
-	response.set('Access-Control-Allow-Origin', '*');
-	response.set('Access-Control-Allow-Methods', 'OPTIONS,POST');
-	response.set('Access-Control-Allow-Headers', 'Content-Type');
-
-	// The block definition
-	response.send({
-		name: "Send Email",
-		description: "Block for sending emails.",
-		inputs: [{
-			name: "to",
-			type: "string",
-			description: "The email address of the message's recipient."
-		}, {
-			name: "subject",
-			type: "string",
-			description: "A brief summary of the topic of the message."
-		}, {
-			name: "body",
-			type: "string",
-			description: "The main content of the message."
-		}]
-	});
+block.handle(function(inputs, callback) {
+    var options = {
+        from: process.env['EMAIL_FROM'] || 'WebPipe Action <action@webpipes.org>',
+        to: inputs.to,
+        subject: inputs.subject,
+        text: inputs.body,
+    };
+    mail.sendMail(options, function (error, res) {
+        if (error) {
+            callback(error);
+        } else {
+            callback(null, {});
+        }
+    });
 });
 
-app.post('/', function (request, response) {
-
-	if (!_.has(request.body, 'input') && _.isObject(request.body.input)) {
-		exit('WebPipe "input" is missing or formatted incorrectly.');
-	}
-	
-	var input = request.body.input;
-	
-	// Verify POST keys exist
-	if (!_.has(input, 'to')) {
-		exit('Email "to" address is missing.');
-	}
-	if (!_.has(input, 'subject')) {
-		exit('Email "subject" is missing.');
-	}
-	if (!_.has(input, 'body')) {
-		exit('Email "body" is missing.');
-	}
-
-	// Send mail
-	var mailOptions = {
-		from: config.from,
-		to: input.to,
-		subject: input.subject,
-		text: input.body,
-	};
-
-	mailTransport.sendMail(mailOptions, function (error, res) {
-		if (error) {
-			console.log('Failed to send email.');
-			response.send(500);
-		} else {
-			response.send(200);
-		}
-	});
-});
-
-var port = process.env.PORT || 3000;
-app.listen(port, function () {
-	console.log('Listening on ' + port);
-});
+block.listen();
