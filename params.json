@@ -1,0 +1,6 @@
+{
+  "name": "Block-send-email",
+  "tagline": "An action block prototype for sending emails.",
+  "body": "# Send Email Action Block\r\n\r\n## Example Usage\r\n\r\n\tcurl -v -X OPTIONS http://block-send-email.herokuapp.com\r\n\t\r\n\tcurl -i -X POST -d '{\"inputs\":[{\"to\":\"matt@matthewghudson.com\",\"subject\":\"foo\",\"body\":\"bar\"}]}' -H \"Content-Type: application/json\" http://block-send-email.herokuapp.com\r\n",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
